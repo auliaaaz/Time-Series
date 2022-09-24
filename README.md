@@ -1,7 +1,8 @@
 # Time-Series
 **Non Seasonal ARIMA for Temperature data**
+---------
   Source Data       : https://power.larc.nasa.gov/data-access-viewer/
-  Temperature Type  : Earth Skin Temperature (Celsius)
+  <br />Temperature Type  : Earth Skin Temperature (Celsius)
   
   Visualization Result:
   1. Time series plot for temperature data 
