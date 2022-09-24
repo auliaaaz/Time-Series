@@ -1,0 +1,150 @@
+> data <-read.csv("temperature_dataset_JJuny.csv", sep=",")
+> head(data)
+  TIME TEMPERATURE
+1    1       27.71
+2    2       27.69
+3    3       27.90
+4    4       27.51
+5    5       27.83
+6    6       27.98
+> 
+> Temperature <- data$TEMPERATURE
+> Time <- data$TIME
+> 
+> ts.plot(Temperature)
+ 
+> adf.test(Temperature)
+
+	Augmented Dickey-Fuller Test
+
+data:  Temperature
+Dickey-Fuller = -1.3671, Lag order = 5, p-value = 0.8407
+alternative hypothesis: stationary
+
+> 
+> differencing <- diff(Temperature, differences = 1)
+> differencing
+  [1] -0.02  0.21 -0.39  0.32  0.15 -0.33 -0.20  0.36  0.31 -0.12 -0.35 -0.11  0.12 -0.18 -0.04  0.14
+ [17] -0.11 -0.34  0.13  0.13  0.05  0.34  0.05  0.00  0.09  0.09 -0.53  0.07  0.33 -0.16 -0.08  0.18
+ [33] -0.34  0.37  0.08  0.26 -0.32 -0.27 -0.19 -0.18  0.03 -0.15  0.53  0.58 -0.14 -0.15  0.37 -0.29
+ [49] -0.03 -0.22 -0.36  0.00 -0.05  0.41 -0.24  0.10 -0.17  0.35  0.34 -0.21  0.10  0.08 -0.05 -0.27
+ [65] -0.21  0.01  0.45  0.13  0.32  0.24 -0.37  0.47 -0.04 -0.47  0.40 -0.31 -0.16 -0.02  0.06 -0.16
+ [81] -0.26  0.54 -0.10 -0.04 -0.02 -0.30  0.33 -0.23  0.39 -0.11 -0.32  0.23  0.27  0.09 -0.31  0.22
+ [97]  0.23  0.16 -0.21  0.29  0.16 -0.06 -0.08  0.23 -0.38 -0.07  0.23 -0.38  0.12  0.33 -0.01  0.39
+[113] -0.21  0.03  0.02 -0.21  0.65 -0.59  0.04  0.07 -0.11  0.29 -0.18 -0.36  0.22 -0.11 -0.26  0.33
+[129] -0.78  0.60 -0.35  0.41  0.04 -0.33  0.32  0.16 -0.36  0.19 -0.30 -0.38  0.25 -0.06  0.01  0.40
+[145] -0.14 -0.75  0.38 -0.09  0.14  0.36  0.07 -0.10 -0.04 -0.08 -0.12  0.30 -0.46  0.01 -0.12  0.32
+[161] -0.30 -0.09  0.25 -0.33 -0.29 -0.03  0.18 -0.06  0.24 -0.29 -0.11  0.03 -0.13 -0.16  0.31  0.09
+[177] -0.16  0.27 -0.42  0.07
+> 
+> ts.plot(differencing)
+ 
+> adf.test(differencing)
+
+	Augmented Dickey-Fuller Test
+
+data:  differencing
+Dickey-Fuller = -7.1905, Lag order = 5, p-value = 0.01
+alternative hypothesis: stationary
+
+Warning message:
+In adf.test(differencing) : p-value smaller than printed p-value
+> 
+> par(mfrow=c(1,2))
+> acf(differencing, lag.max=40)
+> pacf(differencing, lag.max=40)
+ 
+
+> 
+> #acf(differencing, lag.max=10)
+> #pacf(differencing, lag.max=10) maybe ARIMA(0, 1, 2)
+> 
+> #Try to use ARIMA (0, 1, 2)
+> fit1 <-arima (differencing, order=c(0,1,2), method="ML")
+> fit1
+
+Call:
+arima(x = differencing, order = c(0, 1, 2), method = "ML")
+
+Coefficients:
+          ma1     ma2
+      -1.3873  0.3873
+s.e.   0.0841  0.0773
+
+sigma^2 estimated as 0.06435:  log likelihood = -11.62,  aic = 29.25
+> 
+> #Diagnostic Checking 
+> #1. Uji kesignifikanan parameter: Uji t
+> coeftest(fit1)
+
+z test of coefficients:
+
+     Estimate Std. Error  z value  Pr(>|z|)    
+ma1 -1.387256   0.084109 -16.4935 < 2.2e-16 ***
+ma2  0.387257   0.077262   5.0123 5.379e-07 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+> 
+> #2. pengujian residual apakah white noise 
+> Box.test(fit1$residuals, type="Ljung")
+
+	Box-Ljung test
+
+data:  fit1$residuals
+X-squared = 0.01998, df = 1, p-value = 0.8876
+
+> 
+> #3. Residual berdistribusi normal test
+> shapiro.test(fit1$residuals)
+
+	Shapiro-Wilk normality test
+
+data:  fit1$residuals
+W = 0.99106, p-value = 0.3266
+
+> 
+> #   Shapiro-Francia normality test
+> sf.test(fit1$residuals)
+
+	Shapiro-Francia normality test
+
+data:  fit1$residuals
+W = 0.99011, p-value = 0.2137
+
+> 
+> #   Anderson-Darling normality test
+> ad.test(fit1$residuals)
+
+	Anderson-Darling normality test
+
+data:  fit1$residuals
+A = 0.5444, p-value = 0.1598
+
+> 
+> #   Lilliefors (Kolmogorov-Smirnov) normality test
+> lillie.test(fit1$residuals)
+
+	Lilliefors (Kolmogorov-Smirnov) normality test
+
+data:  fit1$residuals
+D = 0.049744, p-value = 0.34
+
+> 
+> # Forecasting untuk 12 tahap ke depan
+> forecasting <-forecast(Temperature, model=fit1, h=12)
+> forecasting
+    Point Forecast    Lo 80    Hi 80    Lo 95    Hi 95
+182       28.60280 28.27679 28.92881 28.10422 29.10139
+183       28.24244 27.89349 28.59139 27.70877 28.77611
+184       28.24244 27.89349 28.59139 27.70877 28.77611
+185       28.24244 27.89349 28.59139 27.70877 28.77611
+186       28.24244 27.89349 28.59139 27.70877 28.77611
+187       28.24244 27.89349 28.59139 27.70877 28.77611
+188       28.24244 27.89349 28.59139 27.70877 28.77611
+189       28.24244 27.89349 28.59139 27.70877 28.77611
+190       28.24244 27.89349 28.59139 27.70877 28.77611
+191       28.24244 27.89349 28.59139 27.70877 28.77611
+192       28.24244 27.89349 28.59139 27.70877 28.77611
+193       28.24244 27.89349 28.59139 27.70877 28.77611
+> 
